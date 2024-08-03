@@ -1,0 +1,47 @@
+{% if not state.materials %}
+  <p>There are no existing materials.</p>
+{% else %}
+  <fieldset class="grid">
+    <select name="order" aria-label="Order By">
+      <option {{ "selected" if query.order == "name" else "" }} value="name">Order By: Name</option>
+      <option {{ "selected" if query.order == "unit" else "" }} value="unit">Order By: Units</option>
+      <option {{ "selected" if query.order == "price_per_unit" else "" }} value="price_per_unit">Order By: Price Per Unit</option>
+    </select>
+    <select name="direction" aria-label="Asc/Desc">
+      <option {{ "selected" if query.direction == "asc" else "" }} value="asc">Ascending</option>
+      <option {{ "selected" if query.direction == "desc" else "" }} value="desc">Descending</option>
+    </select>
+  </fieldset>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Unit</th>
+        <th scope="col">Price Per Unit</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in state.get_materials(query.order, query.direction) %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td>{{ p.unit }}</td>
+          <td>{{ p.price_per_unit | cost }}</td>
+          <td>
+            <button class="pico-background-red-500 contrast">X</button>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+<article>
+  <form method="post" action="/print">
+    <fieldset class="grid">
+      <label>
+        Name
+        <input type="text" name="name" id="name" placeholder="Name" required />
+      </label>
+    </fieldset>
+  </form>
+</article>

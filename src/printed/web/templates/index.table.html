@@ -1,0 +1,72 @@
+{% import 'macros.html' as macros %}
+<div id="table" class="overflow-auto">
+  <h3>
+    Total Savings:
+    <span data-tooltip="Savings"
+      >{{ macros.savings_value(state.total_saved) }}</span
+    >
+    -
+    <span data-tooltip="Investments"
+      >{{ macros.savings_value(state.total_investment, invert=True) }}</span
+    >
+    =
+    <span data-tooltip="Grand Total"
+      >{{ macros.savings_value(state.grand_total_saved) }}</span
+    >
+  </h3>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Totals</th>
+        <th scope="col"></th>
+        <th scope="col">{{ state.total_reference_cost | cost }}</th>
+        <th scope="col">{{ state.total_weight | weight }}</th>
+        <th scope="col">{{ state.total_cost | cost }}</th>
+        <th scope="col">{{ state.total_print_time | duration }}</th>
+        <th scope="col">{{ state.total_count }}</th>
+        <th scope="col">{{ state.total_printed_weight | weight }}</th>
+        <th scope="col">{{ state.total_printed_cost | cost }}</th>
+        <th scope="col">{{ macros.savings_value(state.total_saved) }}</th>
+      </tr>
+    </thead>
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Links</th>
+        <th scope="col">Equivalent Item Cost</th>
+        <th scope="col">Weight</th>
+        <th scope="col">Cost</th>
+        <th scope="col">Print Time</th>
+        <th scope="col">Count</th>
+        <th scope="col">Total Weight</th>
+        <th scope="col">Total Cost</th>
+        <th scope="col">Saved</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in state.get_prints(order=query.order, direction=query.direction,
+      filter=query.filter) %}
+      <tr>
+        <td>
+          <a href="{{ url_for('print', name=p.name) }}" hx-target="page"
+            >{{ p.title }}</a
+          >
+        </td>
+        <td>
+          {% for link in p.source_links %}
+          <a href="{{ link.url }}">{{ link.title }}</a>
+          {% endfor %}
+        </td>
+        <td>{{ p.reference_cost | cost }}</td>
+        <td>{{ p.weight | weight }}</td>
+        <td>{{ p.cost | cost }}</td>
+        <td>{{ p.duration | duration }}</td>
+        <td>{{ p.count }}</td>
+        <td>{{ p.total_printed_weight | weight }}</td>
+        <td>{{ p.total_printed_cost | cost }}</td>
+        <td scope="col">{{ macros.savings_value(p.total_saved) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,38 @@
+{% import 'macros.html' as macros %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+
+    <link rel="icon" href="/static/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/static/icon.svg" type="image/svg+xml" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css"
+    />
+    <link href="/static/app.css" rel="stylesheet" />
+
+    <script src="https://unpkg.com/htmx.org@1.9.9/dist/htmx.min.js"></script>
+    <meta
+      name="htmx-config"
+      content='{"defaultSwapStyle": "outerHTML", "globalViewTransitions": true}'
+    />
+
+    <title>Printed</title>
+  </head>
+  <body>
+    {% include 'header.html' %}
+    <main class="container" style="max-width: 95%">
+      {% block body %}{% endblock %}
+    </main>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<article>
+  <form method="post" action="/print">
+    <fieldset class="grid">
+      <label>
+        Name
+        <input type="text" name="title" id="title" placeholder="Title" required />
+      </label>
+      <label>
+        &nbsp;
+        <input type="submit" value="Add" />
+      </label>
+    </fieldset>
+  </form>
+</article>
+
+{% if not state.prints %}
+  <p>There are no prints available.</p>
+{% else %}
+  <form
+    id="page"
+    hx-get="/"
+    hx-target="#table"
+    hx-trigger="input from:(form input, form select)"
+    hx-swap="swap:100ms"
+    hx-push-url="true"
+  >
+    <fieldset class="grid">
+      <select name="order" aria-label="Order By">
+        {% for order_option in state.order_options %}
+        <option {{ "selected" if query.order == order_option else "" }} value="{{ order_option }}">Order By: {{ order_option | title }}</option>
+        {% endfor %}
+      </select>
+      <select name="direction" aria-label="Asc/Desc">
+        <option {{ "selected" if query.direction == "asc" else "" }} value="asc">Ascending</option>
+        <option {{ "selected" if query.direction == "desc" else "" }} value="desc">Descending</option>
+      </select>
+      <select name="filter_by" aria-label="Filter">
+        <option {{ "selected" if not query.filter else "" }} value="all">Show: All</option>
+        <option {{ "selected" if query.filter == "printed" else "" }} value="printed">Show: Printed</option>
+        <option {{ "selected" if query.filter == "unprinted" else "" }} value="unprinted">Show: Unprinted</option>
+      </select>
+    </fieldset>
+  </form>
+  {% include 'index.table.html' %}
+{% endif %}

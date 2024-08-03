@@ -1,0 +1,201 @@
+{% set name = path.name -%} {% set print = state.prints.get(name) -%} {% if not
+print %}
+<div id="page">No such print {{ name }}.</div>
+{% else %}
+<div id="page">
+  <article id="form">
+    <form hx-put="/print/{{ name }}" hx-target="#page">
+      <fieldset class="grid">
+        <input type="submit" value="Update" />
+      </fieldset>
+      <fieldset class="grid">
+        <label>
+          <span data-tooltip="The display name of the print">Title</span>
+          <input type="text" name="title" required value="{{ print.title }}" />
+        </label>
+        <label>
+          <span
+            data-tooltip="This field controls where the print is stored on disk!"
+            >Name</span
+          >
+          <input type="text" name="name" required value="{{ print.name }}" />
+        </label>
+      </fieldset>
+      <label>
+        <span data-tooltip="The cost of an equivalent item you could buy"
+          >Reference Cost</span
+        >
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          name="reference_cost"
+          value="{{ print.reference_cost }}"
+        />
+      </label>
+      <label>
+        <span
+          data-tooltip="The duration of the print, written in shorthand time format"
+          >Print Duration</span
+        >
+        <input
+          type="text"
+          name="duration"
+          value="{{ print.duration | duration }}"
+          placeholder="1d 5h 3m 15s"
+        />
+      </label>
+      <label>
+        <span data-tooltip="Created At">Created</span>
+        <input
+          type="text"
+          name="created_at"
+          value="{{ print.created_at | relative_datetime }}"
+        />
+      </label>
+
+      <!-- reference_links: list[Link] = Field(default_factory=list) -->
+      <!-- files: list[PrintFile] = Field(default_factory=list) -->
+      <!-- materials: list[PrintMaterial] = Field(default_factory=list) -->
+      <article id="files">
+        <h3>Files</h3>
+        <input type="file" />
+        <table>
+          <thead>
+            <th>Filename</th>
+            <th>Preview</th>
+          </thead>
+          <tbody>
+            {% for f in print.files %} {% set preview = f.preview() %}
+            <tr>
+              <td>{{ f.filename }}</td>
+              {% if preview %}
+              <td>
+                <iframe
+                  width="300rem"
+                  height="300rem"
+                  srcdoc="{{ preview }}"
+                ></iframe>
+              </td>
+              {% else %}
+              <td></td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+
+      <article id="source_links">
+        <form>
+          <input name="name" value="{{ name }}" hidden />
+          <fieldset class="grid">
+            <h3>Source Links</h3>
+            <button
+              hx-post="{{ url_for('append_source_link', name=name)}}"
+              hx-target="#page"
+              variant="primary"
+            >
+              Add
+            </button>
+          </fieldset>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Title</th>
+              <th scope="col">Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in print.source_links %}
+            <tr>
+              <td>
+                <input
+                  name="source_link_title[]"
+                  text="text"
+                  value="{{ l.title }}"
+                />
+              </td>
+              <td>
+                <input
+                  name="source_link_url[]"
+                  text="text"
+                  value="{{ l.url }}"
+                />
+              </td>
+              <td>
+                <button
+                  hx-delete="{{ url_for('delete_source_link', name=name, number=loop.index) }}"
+                  hx-target="#page"
+                  class="pico-background-red-500 contrast"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+    </form>
+
+    <article id="history">
+      <form>
+        <input name="name" value="{{ name }}" hidden />
+        <fieldset class="grid">
+          <h3>History</h3>
+          <button
+            hx-post="{{ url_for('append_history', name=name)}}"
+            hx-target="#page"
+            variant="primary"
+          >
+            Add
+          </button>
+        </fieldset>
+      </form>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Printed On</th>
+            <th scope="col">Status</th>
+            <th scope="col">Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in print.history %}
+          <tr>
+            <td>{{ h.printed_on | format_datetime }}</td>
+            <td>{{ h.status }}</td>
+            <td>
+              <button
+                hx-delete="{{ url_for('delete_history', name=name, number=loop.index) }}"
+                hx-target="#page"
+                class="pico-background-red-500 contrast"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </article>
+  </article>
+
+  <article>
+    <h3>No Going Back Now</h3>
+    <form>
+      <input name="name" value="{{ name }}" hidden />
+      <fieldset class="grid">
+        <button
+          hx-delete="{{ url_for('delete_print', name=name) }}"
+          class="pico-background-red-500 contrast"
+        >
+          Delete
+        </button>
+      </fieldset>
+    </form>
+  </article>
+</div>
+{% endif %}

@@ -1,0 +1,118 @@
+[tool.poetry]
+name = "printed"
+version = "0.1.7"
+description = ""
+authors = [
+    "Dan Cardin <ddcardin@gmail.com>",
+]
+license = "Apache-2.0"
+repository = "https://github.com/dancardin/printed"
+readme = 'README.md'
+
+keywords = [
+  "3d",
+  "print",
+  "printing",
+]
+
+include = [
+    "py.typed",
+    "*.md",
+    "migrations/alembic.ini",
+]
+packages = [
+    { include = "printed", from = "src" },
+]
+
+[tool.poetry.scripts]
+printed = "printed.__main__:run"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+alembic = ">=1.9.0"
+cappa = ">=0.21.1"
+python-dotenv = "*"
+requests = "*"
+rich = "*"
+sqlalchemy = ">=2.0"
+
+# web
+fastapi = "*"
+uvicorn = "*"
+pydantic = ">=2"
+jinja2 = "*"
+dataclass-settings = "^0.2.3"
+python-multipart = "^0.0.9"
+watchfiles = "^0.22.0"
+tomlkit = "^0.13.0"
+whenever = "^0.6.6"
+trimesh = "*"
+
+[tool.poetry.group.dev.dependencies]
+coverage = "^6.0"
+mypy = "1.8.0"
+pytest = "^7.2.2"
+responses = "^0.23.1"
+ruff = "^0.2.2"
+sqlalchemy-model-factory = "*"
+time-machine = "~2.13.0"
+types-requests = "^2.31.0.20240218"
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint.isort]
+known-first-party = ["printed", "tests"]
+
+[tool.ruff.lint]
+select = ["C", "D", "E", "F", "I", "N", "Q", "RET", "RUF", "S", "T", "UP", "YTT"]
+ignore = [
+    "C901",
+    "E501",
+    "S101",
+    "D1",
+    "D203",
+    "D213",
+    "D406",
+    "D407",
+    "D408",
+    "D409",
+    "D413",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T201"]
+"src/cappa/parser.py" = ["N818"]
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+]
+
+[tool.coverage.run]
+include = ["src/*"]
+omit = ["src/printed/migrations/*"]
+branch = true
+
+[tool.pytest.ini_options]
+doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL ELLIPSIS"
+addopts = "--doctest-modules -vv --ff --strict-markers"
+norecursedirs = ".* build dist *.egg bin --junitxml=junit.xml"
+filterwarnings = [
+  "error",
+  "ignore:datetime.datetime.utcfromtimestamp.*:DeprecationWarning",
+]
+markers = [
+]
+
+[build-system]
+requires = ["poetry_core>=1.0.8"]
+build-backend = "poetry.core.masonry.api"
