@@ -4,7 +4,12 @@ print %}
 {% else %}
 <div id="page">
   <article id="form">
-    <form hx-put="/print/{{ name }}" hx-target="#page">
+    <form
+      hx-put="/print/{{ name }}"
+      hx-target="#page"
+      hx-encoding="multipart/form-data"
+    >
+      <progress id="progress" value="0" max="100"></progress>
       <fieldset class="grid">
         <input type="submit" value="Update" />
       </fieldset>
@@ -55,11 +60,10 @@ print %}
       </label>
 
       <!-- reference_links: list[Link] = Field(default_factory=list) -->
-      <!-- files: list[PrintFile] = Field(default_factory=list) -->
       <!-- materials: list[PrintMaterial] = Field(default_factory=list) -->
       <article id="files">
         <h3>Files</h3>
-        <input type="file" />
+        <input type="file" name="files" multiple />
         <table>
           <thead>
             <th>Filename</th>
@@ -196,6 +200,13 @@ print %}
         </button>
       </fieldset>
     </form>
+    <script>
+      htmx.on("#form", "htmx:xhr:progress", function (evt) {
+        htmx
+          .find("#progress")
+          .setAttribute("value", (evt.detail.loaded / evt.detail.total) * 100);
+      });
+    </script>
   </article>
 </div>
 {% endif %}

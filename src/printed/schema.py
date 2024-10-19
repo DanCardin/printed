@@ -1,14 +1,16 @@
 from __future__ import annotations
+import shutil
 
 import logging
 from collections.abc import Iterator
 from pathlib import Path, PurePath
-from typing import ClassVar, Literal, Self, assert_never, cast, TypeAlias
+from typing import ClassVar, Literal, Self, assert_never, cast, TypeAlias, BinaryIO
 from urllib.parse import urlparse
 
 from pydantic import (
     ConfigDict,
     Field,
+    ValidationError,
     field_serializer,
     field_validator,
     model_validator,
@@ -335,8 +337,11 @@ class Print:
             if path.suffix.lower() in {".stl", ".3mf", ".obj"}
         ]
 
+    @property
+    def filenames(self) -> list[str]:
+        return [f.filename for f in self.files]
+
     def write(self):
-        print(self.path, self.SETTINGS_FILE)
         write_content(self.path / self.SETTINGS_FILE, Print, self)
 
     def delete(self):
@@ -367,6 +372,13 @@ class Print:
     def delete_source_link(self, number: int):
         self.source_links.pop(number - 1)
 
+    def add_file(self, filename: str, file: BinaryIO):
+        if filename in self.filenames:
+            raise ValueError(f"File with name '{filename}' already exists!")
+
+        with open(self.path / filename, "wb+") as file_object:
+            shutil.copyfileobj(file, file_object)
+
 
 @dataclass(config=model_config)
 class Link:
@@ -394,16 +406,17 @@ class PrintFile:
 
     def preview(self) -> str:
         import trimesh
-        import trimesh.scene.lighting
+        import trimesh.scene.scene
         import trimesh.viewer
 
         try:
+            trimesh.util.attach_to_log()
             scene = cast(trimesh.Scene, trimesh.load(self.path, force="scene"))
             result = trimesh.viewer.scene_to_html(scene)
-            result = result.replace(
-                "new THREE.DirectionalLight(0xffffff,1.75)",
-                "new THREE.DirectionalLight(0xffffff,20)",
-            )
+            # result = result.replace(
+            #     "new THREE.DirectionalLight(0xffffff,1.75)",
+            #     "new THREE.DirectionalLight(0xffffff,3)",
+            # )
         except Exception as e:
             log.info(e, exc_info=True)
             return ""

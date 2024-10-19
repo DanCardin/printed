@@ -1,6 +1,7 @@
 from typing import Annotated
+import shutil
 
-from fastapi import Depends, Form, Request
+from fastapi import Depends, Form, Request, UploadFile
 from fastapi.templating import Jinja2Templates
 
 from printed import print as print_actions
@@ -64,6 +65,7 @@ async def update_print(
     source_link_titles: Annotated[
         list[str], Form(alias="source_link_title[]", default_factory=list)
     ],
+    files: list[UploadFile],
     reference_cost: Annotated[float, Form()] = 0.0,
     duration: Annotated[str, Form()] = "",
 ):
@@ -76,6 +78,10 @@ async def update_print(
             source_links=source_links,
         )
         print.write()
+
+        for file in files:
+            assert file.filename
+            print.add_file(file.filename, file.file)
 
     return redirect_to(request, "print", name=name)
 
