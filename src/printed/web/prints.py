@@ -1,7 +1,7 @@
 from typing import Annotated
-import shutil
 
 from fastapi import Depends, Form, Request, UploadFile
+from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 
 from printed import print as print_actions
@@ -60,26 +60,42 @@ async def update_print(
     state: Annotated[State, Depends(state)],
     name: str,
     source_link_urls: Annotated[
-        list[str], Form(alias="source_link_url[]", default_factory=list)
+        list[str], Form(alias="source_link_urls[]", default_factory=list)
     ],
     source_link_titles: Annotated[
-        list[str], Form(alias="source_link_title[]", default_factory=list)
+        list[str], Form(alias="source_link_titles[]", default_factory=list)
     ],
-    files: list[UploadFile],
+    reference_link_urls: Annotated[
+        list[str], Form(alias="reference_link_urls[]", default_factory=list)
+    ],
+    reference_link_titles: Annotated[
+        list[str], Form(alias="reference_link_titles[]", default_factory=list)
+    ],
+    material_names: Annotated[
+        list[str], Form(alias="material_names[]", default_factory=list)
+    ],
+    material_amounts: Annotated[
+        list[float], Form(alias="material_amounts[]", default_factory=list)
+    ],
+    files: list[UploadFile] | None = None,
     reference_cost: Annotated[float, Form()] = 0.0,
     duration: Annotated[str, Form()] = "",
 ):
     print = state.prints.get(name)
     if print:
         source_links = list(zip(source_link_urls, source_link_titles))
+        reference_links = list(zip(reference_link_urls, reference_link_titles))
+        materials = dict(zip(material_names, material_amounts))
         print.update(
             reference_cost=reference_cost,
             duration=duration,
             source_links=source_links,
+            reference_links=reference_links,
+            materials=materials,
         )
         print.write()
 
-        for file in files:
+        for file in files or []:
             assert file.filename
             print.add_file(file.filename, file.file)
 
@@ -126,5 +142,67 @@ def delete_source_link(
     if print:
         print.delete_source_link(number)
         print.write()
+
+    return redirect_to(request, "print", name=name)
+
+
+def append_reference_link(
+    request: Request, state: Annotated[State, Depends(state)], name: str
+):
+    print = state.prints.get(name)
+    if print:
+        print.append_reference_link()
+        print.write()
+
+    return redirect_to(request, "print", name=name)
+
+
+def delete_reference_link(
+    request: Request, state: Annotated[State, Depends(state)], name: str, number: int
+):
+    print = state.prints.get(name)
+    if print:
+        print.delete_reference_link(number)
+        print.write()
+
+    return redirect_to(request, "print", name=name)
+
+
+def append_print_material(
+    request: Request,
+    state: Annotated[State, Depends(state)],
+    name: str,
+    material_name: Annotated[str, Form()],
+):
+    print = state.prints.get(name)
+    if print:
+        material = state.materials[material_name]
+        print.append_material(material)
+        print.write()
+
+    return redirect_to(request, "print", name=name)
+
+
+def delete_print_material(
+    request: Request,
+    state: Annotated[State, Depends(state)],
+    name: str,
+    material_name: str,
+):
+    print = state.prints.get(name)
+    if print:
+        print.delete_material(material_name)
+        print.write()
+
+    return redirect_to(request, "print", name=name)
+
+
+def download_print_file(
+    request: Request, state: Annotated[State, Depends(state)], name: str, file: str
+):
+    print = state.prints.get(name)
+    if print:
+        print_file = print.files[file]
+        return FileResponse(print_file.path)
 
     return redirect_to(request, "print", name=name)

@@ -14,6 +14,7 @@ from printed.web.routes import routes
 
 def create_app(command: Printed, routes=routes):
     logging.basicConfig(level="INFO")
+    logging.getLogger("watchfiles.main").setLevel("WARNING")
 
     app = FastAPI(command=command, lifespan=lifespan)
 
@@ -40,5 +41,5 @@ async def lifespan(app: FastAPI):
 
 
 async def watch_files(app: FastAPI, printed: Printed):
-    async for changes in awatch(printed.path):
+    async for changes in awatch(printed.path, rust_timeout=1000):
         app.extra["state"] = State.collect_all(printed.path)

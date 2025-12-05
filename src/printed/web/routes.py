@@ -61,4 +61,29 @@ routes: list[Route] = [
         "path": "/print/{name}/source_link/{number}",
         "endpoint": prints.delete_source_link,
     },
+    {
+        "method": "POST",
+        "path": "/print/{name}/reference_link",
+        "endpoint": prints.append_reference_link,
+    },
+    {
+        "method": "DELETE",
+        "path": "/print/{name}/reference_link/{number}",
+        "endpoint": prints.delete_reference_link,
+    },
+    {
+        "method": "POST",
+        "path": "/print/{name}/material",
+        "endpoint": prints.append_print_material,
+    },
+    {
+        "method": "DELETE",
+        "path": "/print/{name}/material/{material_name}",
+        "endpoint": prints.delete_print_material,
+    },
+    {
+        "method": "GET",
+        "path": "/print/{name}/file/{file}",
+        "endpoint": prints.download_print_file,
+    },
 ]

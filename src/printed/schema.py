@@ -1,21 +1,20 @@
 from __future__ import annotations
-import shutil
 
 import logging
+import shutil
 from collections.abc import Iterator
 from pathlib import Path, PurePath
-from typing import ClassVar, Literal, Self, assert_never, cast, TypeAlias, BinaryIO
+from typing import BinaryIO, ClassVar, Literal, Self, TypeAlias, assert_never, cast
 from urllib.parse import urlparse
 
 from pydantic import (
+    BaseModel,
     ConfigDict,
     Field,
-    ValidationError,
     field_serializer,
     field_validator,
     model_validator,
 )
-from pydantic.dataclasses import dataclass
 from whenever import OffsetDateTime, TimeDelta
 
 from printed.formatting import parse_duration
@@ -26,8 +25,9 @@ log = logging.getLogger(__name__)
 model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-@dataclass(config=model_config)
-class Investment:
+class Investment(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     description: str
     cost: float
 
@@ -35,8 +35,9 @@ class Investment:
 OrderOptions: TypeAlias = Literal["created_at", "count", "name", "saved"]
 
 
-@dataclass
-class PrintStore:
+class PrintStore(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     path: Path
 
     print_paths: dict[str, Path] = Field(default_factory=dict)
@@ -96,8 +97,9 @@ class PrintStore:
         self.prints[name].write()
 
 
-@dataclass(config=model_config)
-class State:
+class State(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     path: Path
 
     prints: PrintStore
@@ -249,8 +251,9 @@ class State:
         return self.total_saved - self.total_investment
 
 
-@dataclass(config=model_config)
-class Print:
+class Print(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     name: str
     title: str
 
@@ -331,15 +334,15 @@ class Print:
 
     @property
     def files(self):
-        return [
-            PrintFile(path)
+        return {
+            path.name: PrintFile(path=path)
             for path in self.path.iterdir()
             if path.suffix.lower() in {".stl", ".3mf", ".obj"}
-        ]
+        }
 
     @property
     def filenames(self) -> list[str]:
-        return [f.filename for f in self.files]
+        return [f.filename for f in self.files.values()]
 
     def write(self):
         write_content(self.path / self.SETTINGS_FILE, Print, self)
@@ -353,10 +356,21 @@ class Print:
         reference_cost: float,
         duration: str,
         source_links: list[tuple[str, str]],
+        reference_links: list[tuple[str, str]],
+        materials: dict[str, float],
     ):
         self.reference_cost = reference_cost
-        self.duration = parse_duration(duration)
+        if duration:
+            self.duration = parse_duration(duration)
         self.source_links = [Link(url=url, title=title) for url, title in source_links]
+        self.reference_links = [
+            Link(url=url, title=title) for url, title in reference_links
+        ]
+
+        for m in self.materials:
+            material_amount = materials.get(m.material)
+            if material_amount is not None:
+                m.unit_count = material_amount
 
     def append_history(self):
         self.history.insert(0, PrintHistory())
@@ -366,11 +380,29 @@ class Print:
         self.history.pop(number - 1)
 
     def append_source_link(self):
-        self.source_links.insert(0, Link(url=""))
+        self.source_links.insert(0, Link())
         self.source_links.sort(key=lambda h: h.title)
 
     def delete_source_link(self, number: int):
         self.source_links.pop(number - 1)
+
+    def append_reference_link(self):
+        self.reference_links.insert(0, Link())
+        self.reference_links.sort(key=lambda h: h.title)
+
+    def delete_reference_link(self, number: int):
+        self.reference_links.pop(number - 1)
+
+    def append_material(self, material: Material):
+        self.materials.append(
+            PrintMaterial(
+                material=material.name, price_per_unit=material.price_per_unit
+            )
+        )
+        self.materials.sort(key=lambda h: h.unit_count)
+
+    def delete_material(self, material_name: str):
+        self.materials = [m for m in self.materials if m.material != material_name]
 
     def add_file(self, filename: str, file: BinaryIO):
         if filename in self.filenames:
@@ -380,24 +412,27 @@ class Print:
             shutil.copyfileobj(file, file_object)
 
 
-@dataclass(config=model_config)
-class Link:
-    url: str
+class Link(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
+    url: str = ""
     title: str = ""
 
     @model_validator(mode="before")
     @classmethod
     def validate_title(cls, data: dict) -> dict:
         if isinstance(data, dict):
+            url = data.get("url")
             title = data.get("title")
-            if not title:
-                purl = urlparse(data["url"])
+            if not title and url:
+                purl = urlparse(url)
                 data["title"] = purl.netloc
         return data
 
 
-@dataclass(config=model_config)
-class PrintFile:
+class PrintFile(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     path: Path
 
     @property
@@ -424,8 +459,9 @@ class PrintFile:
             return result
 
 
-@dataclass(config=model_config)
-class PrintHistory:
+class PrintHistory(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     printed_on: OffsetDateTime = Field(
         default_factory=lambda: OffsetDateTime.now(0, ignore_dst=True)
     )
@@ -443,19 +479,21 @@ class PrintHistory:
         return printed_on.format_common_iso()
 
 
-@dataclass(config=model_config)
-class PrintMaterial:
+class PrintMaterial(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     material: str
-    unit_count: float
     price_per_unit: float
+    unit_count: float = 0
 
     @property
     def price(self) -> float:
         return self.unit_count * self.price_per_unit
 
 
-@dataclass(config=model_config)
-class Material:
+class Material(BaseModel):
+    model_config: ClassVar[ConfigDict] = model_config
+
     name: str
     unit: str
     price_per_unit: float = 0.0
